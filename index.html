@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Patient No-Show Prediction</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h2 class="mb-3">Patient No-Show Prediction</h2>
+
+    <form id="predictionForm" class="row g-3">
+      <div class="col-md-2">
+        <label for="Gender" class="form-label">Gender</label>
+        <select id="Gender" name="Gender" class="form-select">
+          <option value="F">Female</option>
+          <option value="M">Male</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="Age" class="form-label">Age</label>
+        <input type="number" id="Age" name="Age" class="form-control" value="35" min="0" max="115" />
+      </div>
+
+
+      <div class="col-md-2">
+        <label for="wait_days" class="form-label">Days until appointment</label>
+        <input type="number" id="wait_days" name="wait_days" class="form-control" value="3" min="-7" max="365" />
+      </div>
+
+      <div class="col-md-2">
+        <label for="Scholarship" class="form-label">Scholarship</label>
+        <select id="Scholarship" name="Scholarship" class="form-select">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="Hipertension" class="form-label">Hipertension</label>
+        <select id="Hipertension" name="Hipertension" class="form-select">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="Diabetes" class="form-label">Diabetes</label>
+        <select id="Diabetes" name="Diabetes" class="form-select">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="Alcoholism" class="form-label">Alcoholism</label>
+        <select id="Alcoholism" name="Alcoholism" class="form-select">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="Handcap" class="form-label">Handcap</label>
+        <input type="number" id="Handcap" name="Handcap" class="form-control" value="0" min="0" max="4" />
+      </div>
+
+      <div class="col-md-2">
+        <label for="SMS_received" class="form-label">SMS Received</label>
+        <select id="SMS_received" name="SMS_received" class="form-select">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div class="col-12 mt-3">
+        <button type="button" id="predictBtn" class="btn btn-primary">Predict</button>
+      </div>
+    </form>
+
+    <div id="result" class="alert mt-4 d-none"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
