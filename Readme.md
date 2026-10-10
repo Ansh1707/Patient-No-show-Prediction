@@ -1,3 +1,123 @@
+# Patient No-Show Prediction: Django appointment management
+
+Django now provides authenticated appointment management and persistent prediction history
+around the existing trained pipeline. The original FastAPI demo remains available.
+See [IMPLEMENTATION.md](IMPLEMENTATION.md) for the completed step-by-step implementation.
+
+## Run Django locally
+
+Python 3.11 is used by CI. From the repository directory:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+export DJANGO_DEBUG=true
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000/admin/` to inspect appointments and saved predictions.
+Use `http://127.0.0.1:8000/api-auth/login/` to log in, then open
+`http://127.0.0.1:8000/api/appointments/` for the browsable API. Submit JSON using its Raw data tab. Session POSTs require CSRF.
+Create ordinary users in admin. Staff can review all records through the API; give staff the
+appropriate Django model permissions (or use a superuser) to access records in admin.
+
+For a script or API client, issue a token for an existing user:
+
+```sh
+python manage.py drf_create_token username
+```
+
+Send it as `Authorization: Token <token>`. Use HTTPS outside local development. Tokens are
+issued by the operator, so this version does not expose registration or an unauthenticated
+token issuance endpoint. Revoke tokens through the token admin.
+
+## Django endpoints
+
+All routes require authentication. Regular users see only their own records; staff see all.
+
+| Method | Route | Behavior |
+| --- | --- | --- |
+| POST | `/api/appointments/` | Create an appointment owned by the signed-in user |
+| GET | `/api/appointments/` | Paginated appointment list |
+| GET | `/api/appointments/{id}/` | Appointment detail |
+| POST | `/api/appointments/{id}/predict/` | Predict saved inputs and save a history row; body `{}` |
+| GET | `/api/appointments/{id}/history/` | Paginated history for one appointment |
+| GET | `/api/predictions/` | Paginated accessible prediction history |
+| GET | `/api/predictions/{id}/` | Saved prediction detail |
+
+Create an appointment with these exact model feature names:
+
+```json
+{
+  "Gender": "F", "Age": 30, "Scholarship": 0, "Hipertension": 0,
+  "Diabetes": 0, "Alcoholism": 0, "Handcap": 0, "SMS_received": 1,
+  "wait_days": 2
+}
+```
+
+Use `Gender` F/M, age 0..115, binary flags 0/1, handicap 0..4 and waiting days -7..365.
+Numeric inputs must be JSON integers. Missing, extra and invalid fields return 400. Ownership
+is assigned by the server. Unauthenticated requests return 401; inaccessible IDs return 404.
+Lists use `{count, next, previous, results}` with 25 items per page.
+
+Example client flow (replace the appointment ID with the one returned by the first call):
+
+```sh
+curl -X POST http://127.0.0.1:8000/api/appointments/ \
+  -H 'Authorization: Token <token>' -H 'Content-Type: application/json' \
+  -d '{"Gender":"F","Age":30,"Scholarship":0,"Hipertension":0,"Diabetes":0,"Alcoholism":0,"Handcap":0,"SMS_received":1,"wait_days":2}'
+curl -X POST http://127.0.0.1:8000/api/appointments/1/predict/ \
+  -H 'Authorization: Token <token>' -H 'Content-Type: application/json' -d '{}'
+curl http://127.0.0.1:8000/api/appointments/1/history/ \
+  -H 'Authorization: Token <token>'
+```
+
+Successful prediction requests return 201 with the saved history record: ID, appointment ID,
+requesting user, input snapshot, full probability, binary prediction, threshold, model fingerprint
+and timestamp. The decision uses the full probability and the existing threshold. A missing or
+unusable artifact returns 503 and creates no history. Appointment creation, admin and history
+continue to work without model artifacts.
+
+## Existing trained model
+
+Upstream contains neither the trained model nor the dataset. Copy your **existing trusted**
+`best_no_show_model.pkl` into `model/` and, if available, its `threshold.json` into the same folder.
+The fallback threshold remains 0.304. You can instead export `MODEL_PATH` and `THRESHOLD_PATH`
+as absolute paths. Both Django and FastAPI use the shared `prediction_service` module.
+No retraining or changes to the training script are required for this integration. Install the
+ML dependency versions used to produce your artifact. Restart workers after replacing files.
+If you do not already have artifacts, the original training instructions below explain how to
+create them from the separately downloaded dataset.
+
+## Verification
+
+```sh
+export DJANGO_DEBUG=true
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test appointments -v 2
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions repeats these checks on pushes and pull requests. Tests use temporary artifacts
+and synthetic data and do not require a clinical dataset or a production model.
+
+## Deployment settings
+
+`.env.example` lists settings; export them in your process environment (the file is not loaded
+automatically). `DJANGO_DEBUG` defaults to false. Production requires `DJANGO_SECRET_KEY` and
+an appropriate `DJANGO_ALLOWED_HOSTS` list. Secure cookies, HTTPS redirection and HSTS are enabled
+when debug is off. Run with a production WSGI server, serve collected static files, and configure
+a production database and HTTPS termination for your deployment. Do not expose the legacy public
+FastAPI demo as the appointment-management API.
+
+---
+
+## Original model training and FastAPI demo
+
 🏥 Patient No-Show Prediction System
 
 A full-stack machine learning application designed to predict whether a patient will miss their scheduled medical appointment. This project features an automated machine learning pipeline, a high-performance REST API, and a lightweight web interface.
